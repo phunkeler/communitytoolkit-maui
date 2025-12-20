@@ -33,4 +33,13 @@ static class CameraViewExtensions
 	{
 		cameraView.IsAvailable = context.PackageManager?.HasSystemFeature(PackageManager.FeatureCamera) ?? false;
 	}
+
+	internal static void ToSurfaceOrientation(this ICameraView cameraView, Context context, bool isAvailable)
+	{
+		if (cameraView.IsAvailable != isAvailable)
+		{
+			cameraView.IsAvailable = isAvailable;
+			cameraView.OnPropertyChanged(nameof(cameraView.IsAvailable));
+		}
+	}
 }

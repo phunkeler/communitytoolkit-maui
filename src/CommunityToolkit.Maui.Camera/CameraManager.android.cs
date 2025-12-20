@@ -117,7 +117,7 @@ partial class CameraManager
 		}
 
 		cameraExecutor = Executors.NewSingleThreadExecutor() ?? throw new CameraException($"Unable to retrieve {nameof(IExecutorService)}");
-		orientationListener = new OrientationListener(SetImageCaptureTargetRotation, context);
+		orientationListener = new OrientationListener(OnOrientationChanged, context);
 		orientationListener.Enable();
 
 		return previewView;
@@ -425,19 +425,23 @@ partial class CameraManager
 		return provider.BindToLifecycle((ILifecycleOwner)context, cameraSelector, useCases);
 	}
 
-	void SetImageCaptureTargetRotation(int rotation)
+	void OnOrientationChanged(int rotation)
 	{
-		if (imageCapture is not null)
-		{
-			imageCapture.TargetRotation = rotation switch
-			{
-				>= 45 and < 135 => (int)SurfaceOrientation.Rotation270,
-				>= 135 and < 225 => (int)SurfaceOrientation.Rotation180,
-				>= 225 and < 315 => (int)SurfaceOrientation.Rotation90,
-				_ => (int)SurfaceOrientation.Rotation0
-			};
-		}
+		var targetRotation = GetSurfaceRotation(rotation);
+
+		imageCapture?.TargetRotation = targetRotation;
+		cameraPreview?.TargetRotation = targetRotation;
+		videoCapture?.TargetRotation = targetRotation;
 	}
+
+	static int GetSurfaceRotation(int orientationDegrees) 
+		=> orientationDegrees switch
+		{
+			>= 45 and < 135 => (int)SurfaceOrientation.Rotation270,
+			>= 135 and < 225 => (int)SurfaceOrientation.Rotation180,
+			>= 225 and < 315 => (int)SurfaceOrientation.Rotation90,
+			_ => (int)SurfaceOrientation.Rotation0
+		};
 
 	sealed class ImageCallBack(ICameraView cameraView) : ImageCapture.OnImageCapturedCallback
 	{
